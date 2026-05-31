@@ -73,7 +73,6 @@ async def handler(websocket):
                         "message" : f"{n_players} /8 players in the game."}
                 await broadcast(data)            
                 if n_players >= 0:
-                    await asyncio.sleep(10)
                     if n_players >= 0:
                         data = {"type" : "chat",
                                 "user" : "NARRATOR",
