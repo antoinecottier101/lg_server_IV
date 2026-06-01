@@ -18,9 +18,8 @@ player_data = {}
 
 
 
-n_players = 0
 game_on = False
-
+j_limite = 8
 
 
 
@@ -40,6 +39,9 @@ async def broadcast(packet):
 
 
 async def handler(websocket):
+
+    global game_on
+
     print("Joueur connecté")
     clients.add(websocket)
     try:
@@ -51,7 +53,7 @@ async def handler(websocket):
         "silver": 0
         }
 
-
+        
 
         async for message in websocket:
             print("Message reçu :", message)
@@ -61,50 +63,43 @@ async def handler(websocket):
             # CHAT
             # -------------------------
 
-            if data["type"] == "chat":
-                await broadcast(data)
-
-
 
             if data["type"] == "join":
-                n_players += 1
+
+                player_data[websocket]["username"] = data["user"]
+
                 data = {"type" : "chat",
                         "user" : "NARRATOR",
-                        "message" : f"{n_players} /8 players in the game."}
+                        "message" : f"{len(clients)} /8 players in the game."}
                 await broadcast(data)            
-                if n_players >= 0:
-                    if n_players >= 0:
-                        data = {"type" : "chat",
-                                "user" : "NARRATOR",
-                                "message" : "Partie lancée."}
-                        await broadcast(data)
-                        game_on = True
+                
+
+                
+                if len(clients) >= j_limite and not game_on:
+
+                    game_on = True
+
+                    await broadcast({
+                        "type": "chat",
+                        "user": "NARRATOR",
+                        "message": "La partie commence dans 10 secondes."
+                    })
+
+                    await asyncio.sleep(10)
+
+                    await broadcast({
+                        "type": "chat",
+                        "user": "NARRATOR",
+                        "message": "Partie lancée."
+                    })
+
+
+
+            elif data["type"] == "chat":
+                await broadcast(data)
+
                         
 
-            
-
-            # -------------------------
-            # COMMANDES
-            # -------------------------
-
-            # elif data["type"] == "command":
-
-            #     command = data["command"]
-
-            #     print("Commande :", command)
-
-            #     # EVENT TEST
-            #     if command == "event":
-
-            #         await broadcast({
-
-            #             "type": "chat",
-
-            #             "user": "SERVER",
-
-            #             "message": "Meteor shower started!"
-
-            #         })
 
 
 
@@ -113,8 +108,13 @@ async def handler(websocket):
         print("Déconnexion joueur")
 
     finally:
+                
+                clients.discard(websocket)
 
-        clients.remove(websocket)
+                await broadcast({"type" : "chat",
+                        "user" : "NARRATOR",
+                        "message" : f"{player_data[websocket]['username']} s'est déconnecté. \n {len(clients)} / 8 joueurs restants.",})
+
 
 
 
@@ -133,5 +133,4 @@ async def main():
         await asyncio.Future()
 
 
-asyncio.run(main())
 asyncio.run(main())
